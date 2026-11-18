@@ -1,0 +1,17 @@
+#!/bin/bash
+# Despliega en esta máquina la imagen "current" de su servicio. Lo ejecuta el arranque y lo vuelve a ejecutar SSM en cada despliegue.
+set -euo pipefail                                        # Detenerse ante el primer error o una variable sin definir
+exec > >(tee -a /var/log/central-update.log) 2>&1        # Copiar la salida al registro de actualizaciones (y devolverla a SSM)
+log() { echo "$(date -u +%FT%TZ) [update] $*"; }         # Función auxiliar: imprime una línea con la hora
+source /etc/central/service.conf                         # Lee REPOSITORY, CONTAINER y PORTS, escritos al arrancar la máquina
+IMAGE="${registry}/$REPOSITORY:current"                  # Imagen a ejecutar: el registro ECR (puesto por Terraform) más el repositorio y la etiqueta current
+for i in $(seq 1 120); do                                # Intentar hasta 120 veces: la imagen puede no existir todavía
+  if aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${registry} >/dev/null 2>&1 && docker pull "$IMAGE"; then break; fi # Entrar a ECR con el rol de la máquina y bajar la imagen
+  if [ "$i" -eq 120 ]; then log "no se pudo bajar $IMAGE"; exit 1; fi # Sin más intentos: fallar
+  log "la imagen $IMAGE todavía no está disponible (intento $i)" # En el primer despliegue la infraestructura llega antes que las imágenes
+  sleep 15                                               # Esperar 15 segundos, hasta 30 minutos en total
+done
+docker rm -f "$CONTAINER" 2>/dev/null || true            # Quitar el contenedor anterior, si existe
+docker run -d --name "$CONTAINER" --restart unless-stopped --env-file /etc/central/service.env $PORTS "$IMAGE" # Arrancar el contenedor nuevo con su configuración
+docker image prune -f >/dev/null                         # Borrar imágenes viejas para no llenar el disco
+log "ejecutando $IMAGE"                                  # Informar qué quedó corriendo

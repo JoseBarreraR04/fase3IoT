@@ -1,0 +1,18 @@
+#!/bin/bash
+${common}  # Insertar los primeros pasos comunes (swap, Docker, wait_for)
+mkdir -p /etc/central                                    # Carpeta para la configuración del servicio
+echo 'REPOSITORY=central-api' > /etc/central/service.conf # Repositorio ECR de donde sale la imagen
+echo 'CONTAINER=central-api' >> /etc/central/service.conf # Nombre del contenedor
+echo 'PORTS="-p 8000:8000"' >> /etc/central/service.conf # Puerto publicado: el balanceador llega al 8000
+echo 'CENTRAL_DATABASE_URL=mysql+pymysql://${db_user}:${db_password}@${mysql_ip}:3306/${database}' > /etc/central/service.env # Dónde está la base de datos
+echo 'RABBITMQ_URL=amqp://${rabbitmq_user}:${rabbitmq_password}@${rabbitmq_ip}:5672/%2F' >> /etc/central/service.env # Dónde está la cola
+echo 'INGESTION_QUEUE=${queue}' >> /etc/central/service.env # Nombre de la cola
+chmod 600 /etc/central/service.env                       # El archivo tiene claves: solo root lo lee
+cat > /usr/local/bin/update-service.sh <<'SCRIPT'        # Escribir el script que baja y arranca la imagen current
+${update_script}  # Fin del script de actualización
+SCRIPT
+chmod +x /usr/local/bin/update-service.sh                # Hacerlo ejecutable
+wait_for ${mysql_ip} 3306                                # No arrancar antes de que responda la base de datos
+wait_for ${rabbitmq_ip} 5672                             # No arrancar antes de que responda la cola
+/usr/local/bin/update-service.sh                         # Bajar la imagen current y arrancar el contenedor
+log "bootstrap finished OK"                              # Línea de éxito que buscan las verificaciones

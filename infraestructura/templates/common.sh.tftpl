@@ -1,0 +1,20 @@
+set -euo pipefail                                        # Detenerse ante el primer error o una variable sin definir
+exec > >(tee -a /var/log/central-bootstrap.log) 2>&1     # Copiar toda la salida al archivo de registro del arranque
+log() { echo "$(date -u +%FT%TZ) [bootstrap] $*"; }      # Función auxiliar: imprime una línea con la hora
+log "creando un archivo swap de 1 GB"                    # Contar qué se está haciendo
+dd if=/dev/zero of=/swapfile bs=1M count=1024            # Reservar 1 GB de disco para usarlo como memoria extra
+chmod 600 /swapfile                                      # Solo root puede leer el archivo swap
+mkswap /swapfile                                         # Darle formato de memoria swap
+swapon /swapfile                                         # Empezar a usarlo, porque 1 GB de RAM es poco
+log "instalando Docker y netcat"                         # Contar qué se está haciendo
+dnf install -y docker nmap-ncat                          # Docker ejecuta los servicios; netcat prueba si un puerto responde
+systemctl enable --now docker                            # Arrancar Docker ahora y en cada encendido
+wait_for() {                                             # Función auxiliar: esperar hasta que HOST PUERTO acepte conexiones
+  for i in $(seq 1 180); do                              # Intentar hasta 180 veces
+    if nc -z "$1" "$2"; then return 0; fi                # El puerto responde: dejar de esperar
+    log "esperando a $1:$2 (intento $i)"                 # Dejar en el registro qué estamos esperando
+    sleep 5                                              # Pausa de 5 segundos, unos 15 minutos en total
+  done
+  log "se agotó la espera de $1:$2"                      # Informar el fallo
+  return 1                                               # Fallar, lo que detiene todo el script
+}

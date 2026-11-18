@@ -1,0 +1,6 @@
+# Copiar a terraform.tfvars para cambiar un valor por defecto; todos los valores son opcionales.
+# region           = "us-east-1"        # El Learner Lab solo permite us-east-1 y us-west-2
+# max_instances    = 2                  # Máximo de máquinas en cada grupo (API y dashboard)
+# instance_type    = "t3.small"         # Usar un tamaño mayor si MySQL o RabbitMQ se quedan sin memoria
+# ssh_cidr         = "203.0.113.7/32"   # Permitir SSH solo desde tu propia IP
+# mysql_password   = "cambiar"          # No usar una clave real: se ve en el user data de la máquina

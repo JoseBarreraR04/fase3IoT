@@ -1,0 +1,14 @@
+#!/bin/bash
+${common}  # Insertar los primeros pasos comunes (swap, Docker, wait_for)
+mkdir -p /etc/central                                    # Carpeta para la configuración del servicio
+echo 'REPOSITORY=central-web' > /etc/central/service.conf # Repositorio ECR de donde sale la imagen
+echo 'CONTAINER=central-web' >> /etc/central/service.conf # Nombre del contenedor
+echo 'PORTS="-p 80:80"' >> /etc/central/service.conf     # Puerto publicado: el balanceador llega al 80
+echo 'CENTRAL_API_UPSTREAM=${api_host}:8000' > /etc/central/service.env # nginx manda /api al puerto 8000 del balanceador
+echo 'NGINX_ENVSUBST_FILTER=^CENTRAL_API_UPSTREAM$' >> /etc/central/service.env # nginx solo reemplaza esa variable en su plantilla
+cat > /usr/local/bin/update-service.sh <<'SCRIPT'        # Escribir el script que baja y arranca la imagen current
+${update_script}  # Fin del script de actualización
+SCRIPT
+chmod +x /usr/local/bin/update-service.sh                # Hacerlo ejecutable
+/usr/local/bin/update-service.sh                         # Bajar la imagen current y arrancar el contenedor
+log "bootstrap finished OK"                              # Línea de éxito que buscan las verificaciones

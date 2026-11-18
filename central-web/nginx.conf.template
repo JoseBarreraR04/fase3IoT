@@ -1,0 +1,31 @@
+# This file is a TEMPLATE. The official nginx image renders ${CENTRAL_API_UPSTREAM}
+# from the environment at container start, so the same image works next to
+# Docker Compose (central-api:8000) and on its own EC2 instance (the API
+# instance's private address). NGINX_ENVSUBST_FILTER restricts substitution to
+# that one variable, so nginx's own $host and $remote_addr are left alone.
+
+server {
+    listen       80;
+    server_name  localhost;
+
+    root   /usr/share/nginx/html;
+    index  index.html;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    # The dashboard calls the central API through this path rather than through
+    # the API's published port. That keeps the browser on a single origin and,
+    # more usefully, means the page does not care which host port the API
+    # happens to be published on.
+    #
+    # The trailing slash on proxy_pass strips the /api prefix, so a request for
+    # /api/reports/top-products reaches the API as /reports/top-products.
+    location /api/ {
+        proxy_pass http://${CENTRAL_API_UPSTREAM}/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}

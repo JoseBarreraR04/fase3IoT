@@ -1,0 +1,13 @@
+#!/bin/bash
+${common}  # Insertar los primeros pasos comunes (swap, Docker, wait_for)
+log "escribiendo el esquema de la base de datos"         # Contar qué se está haciendo
+mkdir -p /opt/central-db                                 # Carpeta para los scripts SQL
+cat > /opt/central-db/01-schema.sql <<'SQL'              # Escribir el esquema (tablas), copiado por Terraform desde central-db/
+${schema_sql}  # Fin del esquema (en MySQL una línea que empieza con # es un comentario)
+SQL
+cat > /opt/central-db/02-seed.sql <<'SQL'                # Escribir los datos iniciales (las tiendas), copiados desde central-db/
+${seed_sql}  # Fin de los datos iniciales
+SQL
+log "arrancando MySQL"                                   # Contar qué se está haciendo
+docker run -d --name central-mysql --restart unless-stopped -p 3306:3306 -e MYSQL_ROOT_PASSWORD='${root_password}' -e MYSQL_DATABASE='${database}' -e MYSQL_USER='${db_user}' -e MYSQL_PASSWORD='${db_password}' -v mysql-data:/var/lib/mysql -v /opt/central-db:/docker-entrypoint-initdb.d:ro mysql:8.4 --innodb-buffer-pool-size=128M # MySQL: claves, puerto, volumen de datos, esquema inicial y poca memoria
+log "bootstrap finished OK"                              # Línea de éxito que buscan las verificaciones
