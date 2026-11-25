@@ -1,6 +1,6 @@
 # Resumen completo del proyecto: D1 Chain Simulator (Fase 3)
 
-> Para **probarlo** paso a paso, lee `GUIA-PASO-A-PASO.md`. Este archivo explica **qué es y
+> Para **probarlo** paso a paso, lee `GUIA-PASO-A-PASO.md`. Para Terraform en detalle, `TERRAFORM-EXPLICADO.md`. Este archivo explica **qué es y
 > cómo funciona** cada parte.
 
 ## Índice
@@ -512,6 +512,10 @@ Consecuencia: si cambias `worker.py`, basta `make deploy-worker`. `terraform pla
 - [x] Preguntas de la sección 6 en `RESPUESTAS.md`.
 - [ ] Manual: `terraform validate`, `make up`, capturas y `make destroy` → ver `GUIA-PASO-A-PASO.md`.
 
-Documentos relacionados: `TO-DO.md` (enunciado), `DEPLOY.md` (pipelines),
+Herramientas: `herramientas/Dockerfile` es la imagen del contenedor `aws_dev_environment` (make,
+Terraform, AWS CLI, Docker CLI) para la Parte B desde Windows; `herramientas/limpiar-pc.bat` deja el
+PC limpio. Ver `GUIA-PASO-A-PASO.md`.
+
+Documentos relacionados: `TERRAFORM-EXPLICADO.md` (cada archivo de Terraform explicado bloque por bloque), `TO-DO.md` (enunciado), `DEPLOY.md` (pipelines),
 `infraestructura/HOW-IT-WORKS.md` (código → contenedor en AWS), `README.md` (referencia completa,
 en inglés), `GUIA-DE-PRUEBA.pdf` (recorrido con capturas reales).

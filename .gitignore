@@ -16,3 +16,7 @@ infraestructura/*.tfstate
 infraestructura/*.tfstate.*
 infraestructura/terraform.tfvars
 infraestructura/tfplan
+
+# Llave SSH del Learner Lab (clave privada)
+*.pem
+*.ppk
